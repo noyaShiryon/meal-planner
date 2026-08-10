@@ -355,7 +355,7 @@ function TimeSelect({ value, onChange }) {
 }
 
 function SetupView({ requirements, onGenerate }) {
-  const [req, setReq] = useState(requirements);
+  const [req, setReq] = useState({ ...defaultRequirements, ...requirements, goals: Array.isArray(requirements?.goals) ? requirements.goals : defaultRequirements.goals });
 
   const toggleWorkoutDay = (key) => {
     setReq((r) => ({
@@ -977,7 +977,16 @@ export default function App() {
         const res = await window.storage.get(STORAGE_KEY, false);
         if (res && res.value) {
           const parsed = JSON.parse(res.value);
-          if (parsed.requirements) setRequirements(parsed.requirements);
+          if (parsed.requirements) {
+            // Merge with current defaults so requirements saved by an older
+            // version of the app (missing goals/style/avoid* fields) don't
+            // crash the new UI — any field it lacks falls back to default.
+            const merged = { ...defaultRequirements, ...parsed.requirements };
+            if (!Array.isArray(merged.goals)) merged.goals = defaultRequirements.goals;
+            if (!merged.style) merged.style = defaultRequirements.style;
+            if (typeof merged.carbMax !== "number") merged.carbMax = defaultRequirements.carbMax;
+            setRequirements(merged);
+          }
           if (parsed.week) setWeek(parsed.week);
           if (parsed.tracker) setTracker(parsed.tracker);
           if (parsed.stage) setStage(parsed.stage);
