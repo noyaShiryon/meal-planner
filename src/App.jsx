@@ -9,27 +9,34 @@ import {
 // Data: meal pools
 // ---------------------------------------------------------------------------
 const MAIN_POOL = [
-  { id: "m1", name: "עוף + ירקות צלויים + טחינה", kcal: 730, protein: 50, fat: 54, satFat: 10, carbs: 21, sodium: 135, protein_src: "chicken", redMeat: false, nuts: false },
-  { id: "m2", name: "דג + קינואה", kcal: 555, protein: 46, fat: 25, satFat: 4, carbs: 32, sodium: 85, protein_src: "fish", redMeat: false, nuts: false },
-  { id: "m3", name: "בקר/הודו + ירקות צלויים", kcal: 500, protein: 40, fat: 30, satFat: 7, carbs: 23, sodium: 190, protein_src: "beef", redMeat: true, nuts: false },
-  { id: "m4", name: "עוף + סלט טרי", kcal: 460, protein: 42, fat: 30, satFat: 7, carbs: 8, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false },
-  { id: "m5", name: "דג + ירקות צלויים", kcal: 550, protein: 44, fat: 36, satFat: 6, carbs: 15, sodium: 115, protein_src: "fish", redMeat: false, nuts: false },
-  { id: "m6", name: "בקר/הודו + קינואה", kcal: 505, protein: 42, fat: 19, satFat: 5.4, carbs: 40, sodium: 160, protein_src: "beef", redMeat: true, nuts: false },
-  { id: "m7", name: "עוף + טחינה", kcal: 550, protein: 45, fat: 40, satFat: 8, carbs: 6, sodium: 95, protein_src: "chicken", redMeat: false, nuts: false },
-  { id: "m8", name: "דג + סלט טרי", kcal: 460, protein: 41, fat: 28, satFat: 5, carbs: 8, sodium: 85, protein_src: "fish", redMeat: false, nuts: false },
-  { id: "m9", name: "בקר/הודו + טחינה", kcal: 500, protein: 40, fat: 32, satFat: 7, carbs: 14, sodium: 155, protein_src: "beef", redMeat: true, nuts: false },
-  { id: "m10", name: "ביצים (3) + ירקות צלויים + טחינה", kcal: 635, protein: 29, fat: 50, satFat: 9, carbs: 27, sodium: 195, protein_src: "egg", redMeat: false, nuts: false },
-  { id: "m11", name: "ביצים (3) + ירקות צלויים", kcal: 455, protein: 24, fat: 34, satFat: 7, carbs: 21, sodium: 190, protein_src: "egg", redMeat: false, nuts: false },
-  { id: "m12", name: "בקר/הודו + אורז כרובית", kcal: 410, protein: 39, fat: 21, satFat: 6, carbs: 16, sodium: 200, protein_src: "beef", redMeat: true, nuts: false },
-  { id: "m13", name: "עוף + קינואה", kcal: 555, protein: 47, fat: 27, satFat: 6, carbs: 32, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false },
-  { id: "m14", name: "עוף + אורז כרובית", kcal: 460, protein: 44, fat: 29, satFat: 7, carbs: 8, sodium: 140, protein_src: "chicken", redMeat: false, nuts: false },
+  { id: "m1", name: "עוף + ירקות צלויים + טחינה", kcal: 730, protein: 50, fat: 54, satFat: 10, carbs: 21, sodium: 135, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m2", name: "דג + קינואה", kcal: 555, protein: 46, fat: 25, satFat: 4, carbs: 32, sodium: 85, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
+  { id: "m3", name: "בקר + ירקות צלויים", kcal: 500, protein: 40, fat: 30, satFat: 7, carbs: 23, sodium: 190, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m3b", name: "הודו טחון + ירקות צלויים", kcal: 480, protein: 40, fat: 26, satFat: 5, carbs: 23, sodium: 180, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m4", name: "עוף + סלט טרי", kcal: 460, protein: 42, fat: 30, satFat: 7, carbs: 8, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m5", name: "דג + ירקות צלויים", kcal: 550, protein: 44, fat: 36, satFat: 6, carbs: 15, sodium: 115, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m6", name: "בקר + קינואה", kcal: 505, protein: 42, fat: 19, satFat: 5.4, carbs: 40, sodium: 160, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: true, legume: false },
+  { id: "m6b", name: "הודו טחון + קינואה", kcal: 490, protein: 42, fat: 16, satFat: 3.8, carbs: 40, sodium: 150, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
+  { id: "m7", name: "עוף + טחינה", kcal: 550, protein: 45, fat: 40, satFat: 8, carbs: 6, sodium: 95, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m8", name: "דג + סלט טרי", kcal: 460, protein: 41, fat: 28, satFat: 5, carbs: 8, sodium: 85, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m9", name: "בקר + טחינה", kcal: 500, protein: 40, fat: 32, satFat: 7, carbs: 14, sodium: 155, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m9b", name: "הודו טחון + טחינה", kcal: 480, protein: 40, fat: 28, satFat: 5, carbs: 14, sodium: 145, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m10", name: "ביצים (3) + ירקות צלויים + טחינה", kcal: 635, protein: 29, fat: 50, satFat: 9, carbs: 27, sodium: 195, protein_src: "egg", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m11", name: "ביצים (3) + ירקות צלויים", kcal: 455, protein: 24, fat: 34, satFat: 7, carbs: 21, sodium: 190, protein_src: "egg", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m12", name: "בקר + אורז כרובית", kcal: 410, protein: 39, fat: 21, satFat: 6, carbs: 16, sodium: 200, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m12b", name: "הודו טחון + אורז כרובית", kcal: 400, protein: 39, fat: 18, satFat: 4, carbs: 16, sodium: 190, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m13", name: "עוף + קינואה", kcal: 555, protein: 47, fat: 27, satFat: 6, carbs: 32, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
+  { id: "m14", name: "עוף + אורז כרובית", kcal: 460, protein: 44, fat: 29, satFat: 7, carbs: 8, sodium: 140, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  { id: "m15", name: "דג + אורז כרובית", kcal: 470, protein: 43, fat: 27, satFat: 4.5, carbs: 8, sodium: 110, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
 ];
 
 const SNACK_POOL = [
-  { id: "s1", name: "תפוח + 5 שקדים", kcal: 145, protein: 3, fat: 5, satFat: 0.4, carbs: 27, sodium: 2, redMeat: false, nuts: true },
-  { id: "s2", name: "בננה", kcal: 105, protein: 1, fat: 0.3, satFat: 0, carbs: 27, sodium: 1, redMeat: false, nuts: false },
-  { id: "s3", name: "מלפפון + 2 כפות חומוס", kcal: 110, protein: 5, fat: 4, satFat: 0.5, carbs: 14, sodium: 60, redMeat: false, nuts: false },
-  { id: "s4", name: "5 אגוזי מלך + חופן ענבים", kcal: 140, protein: 3, fat: 9, satFat: 1, carbs: 15, sodium: 2, redMeat: false, nuts: true },
+  { id: "s1", name: "תפוח + 5 שקדים", kcal: 145, protein: 3, fat: 5, satFat: 0.4, carbs: 27, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
+  { id: "s2", name: "בננה", kcal: 105, protein: 1, fat: 0.3, satFat: 0, carbs: 27, sodium: 1, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: false },
+  { id: "s3", name: "מלפפון + 2 כפות חומוס", kcal: 110, protein: 5, fat: 4, satFat: 0.5, carbs: 14, sodium: 60, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: true },
+  { id: "s4", name: "5 אגוזי מלך + חופן ענבים", kcal: 140, protein: 3, fat: 9, satFat: 1, carbs: 15, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
+  { id: "s5", name: "זיתים + קוביות גבינה קשה", kcal: 150, protein: 6, fat: 13, satFat: 6, carbs: 3, sodium: 300, redMeat: false, nuts: false, peanuts: false, dairy: true, grain: false, legume: false },
+  { id: "s6", name: "ביצה קשה", kcal: 140, protein: 12, fat: 10, satFat: 3, carbs: 1, sodium: 140, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: false, protein_src: "egg" },
 ];
 
 const DAY_DEFS = [
@@ -50,29 +57,70 @@ const TIME_OPTIONS = Array.from({ length: 48 }).map((_, i) => {
   return `${h}:${m}`;
 });
 
+// Each goal contributes constraints; when several are selected they combine
+// (numeric caps take the strictest value, calorie range narrows).
 const GOALS = [
-  { key: "lose", label: "ירידה במשקל", calMin: 1000, calMax: 1300, sodiumMax: 2000, satFatMax: 15 },
-  { key: "maintain", label: "שמירה על המשקל", calMin: 1400, calMax: 1700, sodiumMax: 2300, satFatMax: 20 },
-  { key: "gain", label: "עלייה במסת שריר", calMin: 1800, calMax: 2200, sodiumMax: 2300, satFatMax: 22 },
-  { key: "heart", label: "שמירה על לחץ דם וכולסטרול", calMin: 1100, calMax: 1500, sodiumMax: 1500, satFatMax: 13 },
+  { key: "bp", label: "שמירה על לחץ דם", sodiumMax: 1500 },
+  { key: "chol", label: "שמירה על כולסטרול", satFatMax: 13 },
+  { key: "sugar", label: "שמירה על סוכר", carbMax: 120 },
+  { key: "lose", label: "ירידה במשקל", calMin: 1000, calMax: 1300 },
+  { key: "gain", label: "עליה במסת שריר", calMin: 1800, calMax: 2200 },
 ];
 
 const AVOID_OPTIONS = [
-  { key: "avoidRedMeat", label: "בשר אדום" },
-  { key: "avoidNuts", label: "אגוזים" },
+  { key: "avoidFish", label: "דגים", match: (m) => m.protein_src === "fish" },
+  { key: "avoidBeef", label: "בקר", match: (m) => m.protein_src === "beef" },
+  { key: "avoidTurkey", label: "הודו", match: (m) => m.protein_src === "turkey" },
+  { key: "avoidChicken", label: "עוף", match: (m) => m.protein_src === "chicken" },
+  { key: "avoidEggs", label: "ביצים", match: (m) => m.protein_src === "egg" },
+  { key: "avoidDairy", label: "חלב", match: (m) => !!m.dairy },
+  { key: "avoidPeanuts", label: "בוטנים", match: (m) => !!m.peanuts },
+  { key: "avoidNuts", label: "אגוזים", match: (m) => !!m.nuts },
 ];
+
+const STYLE_OPTIONS = [
+  { key: "mediterranean", label: "ים תיכוני" },
+  { key: "keto", label: "קיטו" },
+  { key: "lowcarb", label: "דל פחמימה" },
+  { key: "paleo", label: "פליאו" },
+];
+
+// Combine the constraints of every selected goal into one requirement set,
+// starting from a neutral baseline and tightening as goals are added.
+function combineGoals(goalKeys) {
+  const base = { calMin: 1400, calMax: 1700, sodiumMax: 2300, satFatMax: 20, carbMax: 999 };
+  goalKeys.forEach((key) => {
+    const g = GOALS.find((g) => g.key === key);
+    if (!g) return;
+    if (g.sodiumMax !== undefined) base.sodiumMax = Math.min(base.sodiumMax, g.sodiumMax);
+    if (g.satFatMax !== undefined) base.satFatMax = Math.min(base.satFatMax, g.satFatMax);
+    if (g.carbMax !== undefined) base.carbMax = Math.min(base.carbMax, g.carbMax);
+    if (g.calMin !== undefined) base.calMin = Math.max(base.calMin, g.calMin);
+    if (g.calMax !== undefined) base.calMax = Math.min(base.calMax, g.calMax);
+  });
+  if (base.calMin > base.calMax) base.calMin = base.calMax;
+  return base;
+}
+
+function defaultReqForGoals(goalKeys) {
+  return combineGoals(goalKeys);
+}
 
 const defaultRequirements = {
   mode: "simple",
-  goal: "maintain",
+  goals: ["bp", "chol"],
+  style: "mediterranean",
   eatStart: "12:00",
   eatEnd: "20:00",
   workoutDays: ["mon", "wed", "fri"],
-  calMin: 1400,
-  calMax: 1700,
-  sodiumMax: 2300,
-  satFatMax: 20,
-  avoidRedMeat: false,
+  ...combineGoals(["bp", "chol"]),
+  avoidFish: false,
+  avoidBeef: false,
+  avoidTurkey: false,
+  avoidChicken: false,
+  avoidEggs: false,
+  avoidDairy: false,
+  avoidPeanuts: false,
   avoidNuts: false,
 };
 
@@ -88,17 +136,34 @@ function shuffled(arr) {
   return a;
 }
 
-function poolFor(pool, req) {
+const STYLE_LIMITS = {
+  mediterranean: { mainCarbMax: Infinity, snackCarbMax: Infinity },
+  keto: { mainCarbMax: 16, snackCarbMax: 15 },
+  lowcarb: { mainCarbMax: 25, snackCarbMax: 20 },
+  paleo: { mainCarbMax: Infinity, snackCarbMax: Infinity },
+};
+
+function styleAllows(m, style, isSnack) {
+  const limits = STYLE_LIMITS[style] || STYLE_LIMITS.mediterranean;
+  const carbCap = isSnack ? limits.snackCarbMax : limits.mainCarbMax;
+  if (m.carbs > carbCap) return false;
+  if (style === "paleo" && (m.grain || m.legume || m.dairy)) return false;
+  return true;
+}
+
+function poolFor(pool, req, isSnack = false) {
   return pool.filter((m) => {
-    if (req.avoidRedMeat && m.redMeat) return false;
-    if (req.avoidNuts && m.nuts) return false;
+    for (const opt of AVOID_OPTIONS) {
+      if (req[opt.key] && opt.match(m)) return false;
+    }
+    if (!styleAllows(m, req.style || "mediterranean", isSnack)) return false;
     return true;
   });
 }
 
 function generateWeek(req) {
-  const mainOptions = poolFor(MAIN_POOL, req);
-  const snackOptions = poolFor(SNACK_POOL, req);
+  const mainOptions = poolFor(MAIN_POOL, req, false);
+  const snackOptions = poolFor(SNACK_POOL, req, true);
   const usageCount = {};
   const mid = (req.calMin + req.calMax) / 2;
 
@@ -175,7 +240,7 @@ function weekTotals(week) {
 function redMeatCount(week) {
   return week.days.reduce((n, d) => {
     const { lunch, dinner } = dayMeals(d);
-    return n + [lunch, dinner].filter((m) => m && m.redMeat).length;
+    return n + [lunch, dinner].filter((m) => m && m.protein_src === "beef").length;
   }, 0);
 }
 
@@ -187,13 +252,23 @@ function validateDay(day, req) {
 
   [["lunch", lunch], ["dinner", dinner], ["snack", snack]].forEach(([slot, m]) => {
     if (!m) return;
-    if (req.avoidRedMeat && m.redMeat) mealIssues[slot].push("מכיל בשר אדום, וסימנת שאת נמנעת ממנו");
-    if (req.avoidNuts && m.nuts) mealIssues[slot].push("מכיל אגוזים, וסימנת שאת נמנעת מהם");
+    AVOID_OPTIONS.forEach((opt) => {
+      if (req[opt.key] && opt.match(m)) {
+        mealIssues[slot].push(`מכיל ${opt.label}, וסימנת שאת נמנעת מזה`);
+      }
+    });
   });
 
   const totals = dayTotals(day);
   if (totals.kcal < req.calMin || totals.kcal > req.calMax) {
     dayIssues.push(`סה"כ קלוריות היום (${Math.round(totals.kcal)}) מחוץ לטווח שהגדרת (${req.calMin}–${req.calMax})`);
+  }
+  if (req.carbMax && totals.carbs > req.carbMax) {
+    const worst = ["lunch", "dinner", "snack"].reduce((a, b) => {
+      const ma = dayMeals(day)[a], mb = dayMeals(day)[b];
+      return (ma?.carbs || 0) >= (mb?.carbs || 0) ? a : b;
+    });
+    mealIssues[worst].push(`התורם הגדול ביותר לחריגת פחמימות (סה"כ ${Math.round(totals.carbs)} ג', יעד עד ${req.carbMax})`);
   }
   if (totals.sodium > req.sodiumMax) {
     const worst = ["lunch", "dinner", "snack"].reduce((a, b) => {
@@ -216,7 +291,7 @@ function validateDay(day, req) {
 function suggestAlternative(slot, day, req) {
   const pool = slot === "snack" ? SNACK_POOL : MAIN_POOL;
   const current = byId(pool, slot === "lunch" ? day.lunchId : slot === "dinner" ? day.dinnerId : day.snackId);
-  const candidates = poolFor(pool, req).filter((m) => m.id !== current?.id);
+  const candidates = poolFor(pool, req, slot === "snack").filter((m) => m.id !== current?.id);
   if (candidates.length === 0) return null;
   candidates.sort((a, b) => {
     const da = Math.abs(a.kcal - (current?.kcal || 0)) + a.sodium * 0.3 + a.satFat * 8;
@@ -266,6 +341,7 @@ function range(start, end, step) {
 const CAL_OPTIONS = range(800, 3000, 50);
 const SODIUM_OPTIONS = range(500, 4000, 100);
 const SATFAT_OPTIONS = range(5, 40, 1);
+const CARB_OPTIONS = [...range(20, 350, 10), 999];
 
 function TimeSelect({ value, onChange }) {
   return (
@@ -290,9 +366,11 @@ function SetupView({ requirements, onGenerate }) {
     }));
   };
 
-  const applyGoal = (goalKey) => {
-    const g = GOALS.find((g) => g.key === goalKey);
-    setReq((r) => ({ ...r, goal: goalKey, calMin: g.calMin, calMax: g.calMax, sodiumMax: g.sodiumMax, satFatMax: g.satFatMax }));
+  const toggleGoal = (goalKey) => {
+    setReq((r) => {
+      const goals = r.goals.includes(goalKey) ? r.goals.filter((k) => k !== goalKey) : [...r.goals, goalKey];
+      return { ...r, goals, ...combineGoals(goals) };
+    });
   };
 
   const toggleAvoid = (key) => setReq((r) => ({ ...r, [key]: !r[key] }));
@@ -346,16 +424,32 @@ function SetupView({ requirements, onGenerate }) {
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-bold text-stone-700 mb-2">סגנון תפריט</label>
+          <div className="flex flex-wrap gap-2">
+            {STYLE_OPTIONS.map((s) => (
+              <button key={s.key} type="button" onClick={() => setReq((r) => ({ ...r, style: s.key }))}
+                className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition ${
+                  req.style === s.key
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : "bg-white text-stone-600 border-stone-300"
+                }`}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {req.mode === "simple" ? (
           <div>
-            <label className="block text-sm font-bold text-stone-700 mb-2">מה המטרה שלך השבוע?</label>
+            <label className="block text-sm font-bold text-stone-700 mb-2">מה המטרה שלך השבוע? (אפשר לבחור כמה)</label>
             <div className="flex flex-col gap-2">
               {GOALS.map((g) => (
                 <label key={g.key}
                   className={`flex items-center gap-2 border rounded-xl px-3 py-2 text-sm font-semibold cursor-pointer ${
-                    req.goal === g.key ? "border-orange-400 bg-orange-50 text-orange-700" : "border-stone-200 text-stone-600"
+                    req.goals.includes(g.key) ? "border-orange-400 bg-orange-50 text-orange-700" : "border-stone-200 text-stone-600"
                   }`}>
-                  <input type="radio" name="goal" checked={req.goal === g.key} onChange={() => applyGoal(g.key)} className="w-4 h-4" />
+                  <input type="checkbox" checked={req.goals.includes(g.key)} onChange={() => toggleGoal(g.key)} className="w-4 h-4" />
                   {g.label}
                 </label>
               ))}
@@ -391,12 +485,19 @@ function SetupView({ requirements, onGenerate }) {
                 {SATFAT_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-bold text-stone-700 mb-2">פחמימות מקסימליות ליום (ג')</label>
+              <select value={req.carbMax} onChange={(e) => setReq((r) => ({ ...r, carbMax: Number(e.target.value) }))}
+                className="border border-stone-300 rounded-lg px-3 py-2 text-sm w-full bg-white">
+                {CARB_OPTIONS.map((v) => <option key={v} value={v}>{v === 999 ? "ללא הגבלה" : v}</option>)}
+              </select>
+            </div>
           </div>
         )}
 
         <div>
           <label className="block text-sm font-bold text-stone-700 mb-2">להימנע מ...</label>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {AVOID_OPTIONS.map((a) => (
               <label key={a.key} className="flex items-center gap-2 text-sm font-semibold text-stone-700">
                 <input type="checkbox" checked={req[a.key]} onChange={() => toggleAvoid(a.key)} className="w-4 h-4" />
@@ -421,7 +522,7 @@ function SetupView({ requirements, onGenerate }) {
 // ---------------------------------------------------------------------------
 function MealPicker({ slot, req, onPick, onClose }) {
   const pool = slot === "snack" ? SNACK_POOL : MAIN_POOL;
-  const options = poolFor(pool, req);
+  const options = poolFor(pool, req, slot === "snack");
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" dir="rtl">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-y-auto p-4 space-y-2">
@@ -752,7 +853,7 @@ function ReportView({ week, requirements, tracker, onBackToTracker }) {
   let doneCount = 0;
   let satietySum = 0, satietyN = 0;
   let moodSum = 0, moodN = 0;
-  let daysInCalRange = 0, daysSodiumOk = 0, daysSatFatOk = 0;
+  let daysInCalRange = 0, daysSodiumOk = 0, daysSatFatOk = 0, daysCarbOk = 0;
   const notedDays = [];
 
   week.days.forEach((day) => {
@@ -766,6 +867,7 @@ function ReportView({ week, requirements, tracker, onBackToTracker }) {
     if (totals.kcal >= requirements.calMin && totals.kcal <= requirements.calMax) daysInCalRange++;
     if (totals.sodium <= requirements.sodiumMax) daysSodiumOk++;
     if (totals.satFat <= requirements.satFatMax) daysSatFatOk++;
+    if (!requirements.carbMax || totals.carbs <= requirements.carbMax) daysCarbOk++;
     if (t.notes && t.notes.trim()) notedDays.push({ name: day.name, notes: t.notes });
   });
 
@@ -817,6 +919,10 @@ function ReportView({ week, requirements, tracker, onBackToTracker }) {
         <div className="flex items-center justify-between text-sm">
           <span className="text-stone-600">ימים בגבול השומן הרווי</span>
           <Pill tone={daysSatFatOk >= 5 ? "emerald" : "amber"}>{daysSatFatOk}/7 ימים</Pill>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-stone-600">ימים בגבול הפחמימות</span>
+          <Pill tone={daysCarbOk >= 5 ? "emerald" : "amber"}>{daysCarbOk}/7 ימים</Pill>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-stone-600">בשר אדום השבוע</span>
