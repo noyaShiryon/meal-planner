@@ -27,11 +27,13 @@ const MAIN_POOL = [
   { id: "m12b", name: "הודו טחון + אורז כרובית", kcal: 400, protein: 39, fat: 18, satFat: 4, carbs: 16, sodium: 190, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
   { id: "m13", name: "עוף + קינואה", kcal: 555, protein: 47, fat: 27, satFat: 6, carbs: 32, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
   { id: "m14", name: "עוף + אורז כרובית", kcal: 460, protein: 44, fat: 29, satFat: 7, carbs: 8, sodium: 140, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+   { id: "m14", name: "בקר + אורז כרובית", kcal: 520, protein: 48, fat: 32, satFat: 8, carbs: 9, sodium: 140, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
   { id: "m15", name: "דג + אורז כרובית", kcal: 470, protein: 43, fat: 27, satFat: 4.5, carbs: 8, sodium: 110, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
 ];
 
 const SNACK_POOL = [
   { id: "s1", name: "תפוח + 5 שקדים", kcal: 145, protein: 3, fat: 5, satFat: 0.4, carbs: 27, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
+  { id: "s1", name: "שזיף + 5 קשיו", kcal: 145, protein: 3, fat: 5, satFat: 0.4, carbs: 27, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
   { id: "s2", name: "בננה", kcal: 105, protein: 1, fat: 0.3, satFat: 0, carbs: 27, sodium: 1, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: false },
   { id: "s3", name: "מלפפון + 2 כפות חומוס", kcal: 110, protein: 5, fat: 4, satFat: 0.5, carbs: 14, sodium: 60, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: true },
   { id: "s4", name: "5 אגוזי מלך + חופן ענבים", kcal: 140, protein: 3, fat: 9, satFat: 1, carbs: 15, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
