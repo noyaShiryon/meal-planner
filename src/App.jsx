@@ -6,39 +6,137 @@ import {
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
-// Data: meal pools
+// Data: ingredient nutrition (per 100g) + dish definitions built from weighed
+// components. Values are reasonable estimates, not lab measurements.
 // ---------------------------------------------------------------------------
+const ING = {
+  chicken: { label: "חזה עוף", per100: { kcal: 165, protein: 31, fat: 3.6, satFat: 1, carbs: 0, sodium: 65 }, tag: { protein_src: "chicken" } },
+  turkey: { label: "הודו טחון", per100: { kcal: 150, protein: 30, fat: 3, satFat: 1, carbs: 0, sodium: 70 }, tag: { protein_src: "turkey" } },
+  beef: { label: "בקר טחון רזה", per100: { kcal: 215, protein: 27, fat: 11, satFat: 4.5, carbs: 0, sodium: 75 }, tag: { protein_src: "beef", redMeat: true } },
+  salmon: { label: "סלמון", per100: { kcal: 208, protein: 20, fat: 13, satFat: 2.5, carbs: 0, sodium: 60 }, tag: { protein_src: "fish" } },
+  whitefish: { label: "דג לבן", per100: { kcal: 128, protein: 26, fat: 2.7, satFat: 0.7, carbs: 0, sodium: 55 }, tag: { protein_src: "fish" } },
+  egg: { label: "ביצים", per100: { kcal: 143, protein: 12.6, fat: 9.5, satFat: 3.1, carbs: 0.7, sodium: 142 }, tag: { protein_src: "egg" } },
+  olive_oil: { label: "שמן זית", per100: { kcal: 884, protein: 0, fat: 100, satFat: 14, carbs: 0, sodium: 0 }, tag: {} },
+  tahini: { label: "טחינה גולמית", per100: { kcal: 595, protein: 17, fat: 53, satFat: 7.5, carbs: 21, sodium: 20 }, tag: {} },
+  roasted_veg: { label: "ירקות צלויים", per100: { kcal: 70, protein: 2.5, fat: 4, satFat: 0.6, carbs: 7, sodium: 15 }, tag: {} },
+  fresh_salad: { label: "סלט ירקות טרי", per100: { kcal: 45, protein: 1, fat: 3, satFat: 0.5, carbs: 4, sodium: 5 }, tag: {} },
+  quinoa: { label: "קינואה מבושלת", per100: { kcal: 120, protein: 4.4, fat: 1.9, satFat: 0.2, carbs: 21.3, sodium: 7 }, tag: { grain: true } },
+  cauli_rice: { label: "אורז כרובית", per100: { kcal: 33, protein: 2.5, fat: 1.5, satFat: 0.2, carbs: 4, sodium: 20 }, tag: {} },
+  bulgur: { label: "בורגול מבושל", per100: { kcal: 83, protein: 3, fat: 0.2, satFat: 0, carbs: 18.6, sodium: 5 }, tag: { grain: true } },
+  lentils: { label: "עדשים מבושלות", per100: { kcal: 116, protein: 9, fat: 0.4, satFat: 0.1, carbs: 20, sodium: 2 }, tag: { legume: true } },
+  hummus: { label: "חומוס", per100: { kcal: 166, protein: 8, fat: 9.6, satFat: 1.4, carbs: 14, sodium: 260 }, tag: { legume: true } },
+  hard_cheese: { label: "גבינה קשה", per100: { kcal: 300, protein: 23, fat: 23, satFat: 14, carbs: 2, sodium: 800 }, tag: { dairy: true } },
+  cottage: { label: "קוטג'", per100: { kcal: 98, protein: 11, fat: 4.3, satFat: 2.7, carbs: 3.4, sodium: 364 }, tag: { dairy: true } },
+  olives: { label: "זיתים", per100: { kcal: 115, protein: 0.8, fat: 11, satFat: 1.4, carbs: 6, sodium: 1500 }, tag: {} },
+  apple: { label: "תפוח", per100: { kcal: 52, protein: 0.3, fat: 0.2, satFat: 0, carbs: 14, sodium: 1 }, tag: {} },
+  banana: { label: "בננה", per100: { kcal: 89, protein: 1.1, fat: 0.3, satFat: 0.1, carbs: 23, sodium: 1 }, tag: {} },
+  grapes: { label: "ענבים", per100: { kcal: 69, protein: 0.7, fat: 0.2, satFat: 0, carbs: 18, sodium: 2 }, tag: {} },
+  carrot: { label: "גזר", per100: { kcal: 41, protein: 0.9, fat: 0.2, satFat: 0, carbs: 10, sodium: 69 }, tag: {} },
+  cucumber: { label: "מלפפון", per100: { kcal: 15, protein: 0.7, fat: 0.1, satFat: 0, carbs: 3.6, sodium: 2 }, tag: {} },
+  almonds: { label: "שקדים", per100: { kcal: 579, protein: 21, fat: 50, satFat: 3.8, carbs: 22, sodium: 1 }, tag: { nuts: true } },
+  walnuts: { label: "אגוזי מלך", per100: { kcal: 654, protein: 15, fat: 65, satFat: 6, carbs: 14, sodium: 2 }, tag: { nuts: true } },
+  peanut_butter: { label: "חמאת בוטנים", per100: { kcal: 588, protein: 25, fat: 50, satFat: 10, carbs: 20, sodium: 430 }, tag: { peanuts: true } },
+  dark_choc: { label: "שוקולד מריר 70%", per100: { kcal: 598, protein: 7.8, fat: 43, satFat: 24, carbs: 45, sodium: 20 }, tag: {} },
+  ground_chicken: { label: "עוף טחון", per100: { kcal: 143, protein: 17.4, fat: 8, satFat: 2.3, carbs: 0, sodium: 70 }, tag: { protein_src: "chicken" } },
+  plum: { label: "שזיף", per100: { kcal: 46, protein: 0.7, fat: 0.3, satFat: 0, carbs: 11.4, sodium: 0 }, tag: {} },
+  kabocha: { label: "דלורית צלויה", per100: { kcal: 40, protein: 1, fat: 1.5, satFat: 0.2, carbs: 7, sodium: 10 }, tag: {} },
+  cashews: { label: "קשיו", per100: { kcal: 553, protein: 18, fat: 44, satFat: 7.8, carbs: 30, sodium: 12 }, tag: { nuts: true } },
+  green_beans: { label: "שעועית ירוקה", per100: { kcal: 35, protein: 2, fat: 0.2, satFat: 0, carbs: 7, sodium: 6 }, tag: {} },
+};
+
+function buildDish(id, parts) {
+  const totals = { kcal: 0, protein: 0, fat: 0, satFat: 0, carbs: 0, sodium: 0 };
+  const tags = { protein_src: null, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: false };
+  const components = parts.map(([key, grams]) => {
+    const ing = ING[key];
+    const f = grams / 100;
+    totals.kcal += ing.per100.kcal * f;
+    totals.protein += ing.per100.protein * f;
+    totals.fat += ing.per100.fat * f;
+    totals.satFat += ing.per100.satFat * f;
+    totals.carbs += ing.per100.carbs * f;
+    totals.sodium += ing.per100.sodium * f;
+    if (ing.tag.protein_src) tags.protein_src = ing.tag.protein_src;
+    if (ing.tag.redMeat) tags.redMeat = true;
+    if (ing.tag.nuts) tags.nuts = true;
+    if (ing.tag.peanuts) tags.peanuts = true;
+    if (ing.tag.dairy) tags.dairy = true;
+    if (ing.tag.grain) tags.grain = true;
+    if (ing.tag.legume) tags.legume = true;
+    return { label: ing.label, grams };
+  });
+  if (!tags.protein_src) tags.protein_src = tags.legume ? "legume" : tags.dairy ? "dairy" : "vegetarian";
+  return {
+    id,
+    name: components.map((c) => c.label).join(" + "),
+    components,
+    kcal: Math.round(totals.kcal),
+    protein: Math.round(totals.protein * 10) / 10,
+    fat: Math.round(totals.fat * 10) / 10,
+    satFat: Math.round(totals.satFat * 10) / 10,
+    carbs: Math.round(totals.carbs * 10) / 10,
+    sodium: Math.round(totals.sodium),
+    ...tags,
+  };
+}
+
 const MAIN_POOL = [
-  { id: "m1", name: "עוף + ירקות צלויים + טחינה", kcal: 730, protein: 50, fat: 54, satFat: 10, carbs: 21, sodium: 135, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m2", name: "דג + קינואה", kcal: 555, protein: 46, fat: 25, satFat: 4, carbs: 32, sodium: 85, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
-  { id: "m3", name: "בקר + ירקות צלויים", kcal: 500, protein: 40, fat: 30, satFat: 7, carbs: 23, sodium: 190, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m3b", name: "הודו טחון + ירקות צלויים", kcal: 480, protein: 40, fat: 26, satFat: 5, carbs: 23, sodium: 180, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m4", name: "עוף + סלט טרי", kcal: 460, protein: 42, fat: 30, satFat: 7, carbs: 8, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m5", name: "דג + ירקות צלויים", kcal: 550, protein: 44, fat: 36, satFat: 6, carbs: 15, sodium: 115, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m6", name: "בקר + קינואה", kcal: 505, protein: 42, fat: 19, satFat: 5.4, carbs: 40, sodium: 160, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: true, legume: false },
-  { id: "m6b", name: "הודו טחון + קינואה", kcal: 490, protein: 42, fat: 16, satFat: 3.8, carbs: 40, sodium: 150, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
-  { id: "m7", name: "עוף + טחינה", kcal: 550, protein: 45, fat: 40, satFat: 8, carbs: 6, sodium: 95, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m8", name: "דג + סלט טרי", kcal: 460, protein: 41, fat: 28, satFat: 5, carbs: 8, sodium: 85, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m9", name: "בקר + טחינה", kcal: 500, protein: 40, fat: 32, satFat: 7, carbs: 14, sodium: 155, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m9b", name: "הודו טחון + טחינה", kcal: 480, protein: 40, fat: 28, satFat: 5, carbs: 14, sodium: 145, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m10", name: "ביצים (3) + ירקות צלויים + טחינה", kcal: 635, protein: 29, fat: 50, satFat: 9, carbs: 27, sodium: 195, protein_src: "egg", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m11", name: "ביצים (3) + ירקות צלויים", kcal: 455, protein: 24, fat: 34, satFat: 7, carbs: 21, sodium: 190, protein_src: "egg", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m12", name: "בקר + אורז כרובית", kcal: 410, protein: 39, fat: 21, satFat: 6, carbs: 16, sodium: 200, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m12b", name: "הודו טחון + אורז כרובית", kcal: 400, protein: 39, fat: 18, satFat: 4, carbs: 16, sodium: 190, protein_src: "turkey", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m13", name: "עוף + קינואה", kcal: 555, protein: 47, fat: 27, satFat: 6, carbs: 32, sodium: 100, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: true, legume: false },
-  { id: "m14", name: "עוף + אורז כרובית", kcal: 460, protein: 44, fat: 29, satFat: 7, carbs: 8, sodium: 140, protein_src: "chicken", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
-   { id: "m14", name: "בקר + אורז כרובית", kcal: 520, protein: 48, fat: 32, satFat: 8, carbs: 9, sodium: 140, protein_src: "beef", redMeat: true, nuts: false, dairy: false, grain: false, legume: false },
-  { id: "m15", name: "דג + אורז כרובית", kcal: 470, protein: 43, fat: 27, satFat: 4.5, carbs: 8, sodium: 110, protein_src: "fish", redMeat: false, nuts: false, dairy: false, grain: false, legume: false },
+  buildDish("m1", [["chicken", 180], ["roasted_veg", 200], ["tahini", 20]]),
+  buildDish("m2", [["chicken", 180], ["fresh_salad", 200]]),
+  buildDish("m3", [["chicken", 180], ["quinoa", 150]]),
+  buildDish("m4", [["chicken", 180], ["cauli_rice", 200]]),
+  buildDish("m5", [["chicken", 180], ["bulgur", 150], ["roasted_veg", 100]]),
+  buildDish("m6", [["chicken", 180], ["tahini", 30], ["fresh_salad", 100]]),
+  buildDish("m8", [["turkey", 180], ["roasted_veg", 200]]),
+  buildDish("m9", [["turkey", 180], ["quinoa", 150]]),
+  buildDish("m10", [["turkey", 180], ["cauli_rice", 200]]),
+  buildDish("m11", [["turkey", 180], ["tahini", 20], ["fresh_salad", 100]]),
+  buildDish("m12", [["turkey", 150], ["bulgur", 150]]),
+  buildDish("m13", [["beef", 150], ["roasted_veg", 200]]),
+  buildDish("m14", [["beef", 150], ["quinoa", 150]]),
+  buildDish("m15", [["beef", 150], ["cauli_rice", 200]]),
+  buildDish("m16", [["beef", 150], ["tahini", 20], ["fresh_salad", 100]]),
+  buildDish("m18", [["salmon", 180], ["roasted_veg", 200]]),
+  buildDish("m19", [["salmon", 180], ["quinoa", 150]]),
+  buildDish("m20", [["salmon", 180], ["cauli_rice", 200]]),
+  buildDish("m21", [["salmon", 150], ["fresh_salad", 150], ["olives", 20]]),
+  buildDish("m22", [["whitefish", 200], ["roasted_veg", 200]]),
+  buildDish("m23", [["whitefish", 200], ["bulgur", 150]]),
+  buildDish("m24", [["whitefish", 200], ["cauli_rice", 200]]),
+  buildDish("m25", [["whitefish", 180], ["tahini", 20], ["fresh_salad", 100]]),
+  buildDish("m26", [["egg", 150], ["roasted_veg", 200], ["tahini", 15]]),
+  buildDish("m27", [["egg", 150], ["roasted_veg", 150]]),
+  buildDish("m28", [["egg", 150], ["fresh_salad", 150], ["olives", 20]]),
+  buildDish("m29", [["egg", 150], ["cauli_rice", 150]]),
+  buildDish("m30", [["lentils", 250], ["roasted_veg", 150], ["tahini", 15]]),
+  buildDish("m31", [["hummus", 200], ["fresh_salad", 150], ["roasted_veg", 100]]),
+  buildDish("m32", [["hard_cheese", 80], ["roasted_veg", 200], ["olives", 20]]),
+  buildDish("m33", [["ground_chicken", 180], ["roasted_veg", 200]]),
+  buildDish("m34", [["ground_chicken", 180], ["kabocha", 200]]),
+  buildDish("m35", [["ground_chicken", 180], ["cauli_rice", 200]]),
+  buildDish("m36", [["chicken", 180], ["kabocha", 200], ["tahini", 15]]),
+  buildDish("m37", [["salmon", 180], ["kabocha", 200]]),
+  buildDish("m38", [["turkey", 180], ["green_beans", 200]]),
+  buildDish("m39", [["whitefish", 200], ["green_beans", 200]]),
 ];
 
 const SNACK_POOL = [
-  { id: "s1", name: "תפוח + 5 שקדים", kcal: 145, protein: 3, fat: 5, satFat: 0.4, carbs: 27, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
-  { id: "s1", name: "שזיף + 5 קשיו", kcal: 145, protein: 3, fat: 5, satFat: 0.4, carbs: 27, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
-  { id: "s2", name: "בננה", kcal: 105, protein: 1, fat: 0.3, satFat: 0, carbs: 27, sodium: 1, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: false },
-  { id: "s3", name: "מלפפון + 2 כפות חומוס", kcal: 110, protein: 5, fat: 4, satFat: 0.5, carbs: 14, sodium: 60, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: true },
-  { id: "s4", name: "5 אגוזי מלך + חופן ענבים", kcal: 140, protein: 3, fat: 9, satFat: 1, carbs: 15, sodium: 2, redMeat: false, nuts: true, peanuts: false, dairy: false, grain: false, legume: false },
-  { id: "s5", name: "זיתים + קוביות גבינה קשה", kcal: 150, protein: 6, fat: 13, satFat: 6, carbs: 3, sodium: 300, redMeat: false, nuts: false, peanuts: false, dairy: true, grain: false, legume: false },
-  { id: "s6", name: "ביצה קשה", kcal: 140, protein: 12, fat: 10, satFat: 3, carbs: 1, sodium: 140, redMeat: false, nuts: false, peanuts: false, dairy: false, grain: false, legume: false, protein_src: "egg" },
+  buildDish("s1", [["apple", 150], ["almonds", 15]]),
+  buildDish("s2", [["banana", 120]]),
+  buildDish("s3", [["cucumber", 150], ["hummus", 60]]),
+  buildDish("s4", [["walnuts", 15], ["grapes", 80]]),
+  buildDish("s5", [["olives", 30], ["hard_cheese", 30]]),
+  buildDish("s6", [["egg", 100]]),
+  buildDish("s7", [["carrot", 150], ["hummus", 40]]),
+  buildDish("s8", [["cottage", 150], ["cucumber", 100]]),
+  buildDish("s9", [["apple", 150], ["peanut_butter", 15]]),
+  buildDish("s10", [["almonds", 20]]),
+  buildDish("s12", [["grapes", 150]]),
+  buildDish("s13", [["dark_choc", 20], ["almonds", 10]]),
+  buildDish("s14", [["egg", 50], ["cucumber", 100]]),
+  buildDish("s15", [["cashews", 20]]),
+  buildDish("s16", [["plum", 150], ["cashews", 15]]),
+  buildDish("s17", [["plum", 150]]),
 ];
 
 const DAY_DEFS = [
@@ -522,6 +620,19 @@ function SetupView({ requirements, onGenerate }) {
 // ---------------------------------------------------------------------------
 // Meal picker modal
 // ---------------------------------------------------------------------------
+function ComponentList({ components }) {
+  return (
+    <div className="text-xs text-stone-500 mt-1 space-y-0.5">
+      {components.map((c, i) => (
+        <div key={i} className="flex justify-between">
+          <span>{c.label}</span>
+          <span className="text-stone-400">{c.grams} גרם</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MealPicker({ slot, req, onPick, onClose }) {
   const pool = slot === "snack" ? SNACK_POOL : MAIN_POOL;
   const options = poolFor(pool, req, slot === "snack");
@@ -536,7 +647,8 @@ function MealPicker({ slot, req, onPick, onClose }) {
           <button key={m.id} onClick={() => onPick(m.id)}
             className="w-full text-right border border-stone-200 rounded-xl p-3 hover:border-orange-400 hover:bg-orange-50 transition">
             <div className="font-semibold text-stone-800 text-sm">{m.name}</div>
-            <div className="text-xs text-stone-500 mt-1">{m.kcal} קק"ל · נתרן {m.sodium} מ"ג · שומן רווי {m.satFat}ג'</div>
+            <ComponentList components={m.components} />
+            <div className="text-xs text-stone-500 mt-1.5 font-semibold">{m.kcal} קק"ל · נתרן {m.sodium} מ"ג · שומן רווי {m.satFat}ג'</div>
           </button>
         ))}
       </div>
@@ -553,11 +665,12 @@ const SLOT_META = {
   snack: { label: "חטיף", time: "16:30", icon: Star, tone: "amber" },
 };
 
-function MealSlot({ day, slot, req, issues, onSwap }) {
+function MealSlot({ day, slot, req, issues, onSwap, locked }) {
   const meal = dayMeals(day)[slot];
   const meta = SLOT_META[slot];
   const Icon = meta.icon;
   const [picking, setPicking] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   if (!meal) return null;
 
   const toneBg = {
@@ -566,7 +679,7 @@ function MealSlot({ day, slot, req, issues, onSwap }) {
     amber: "bg-amber-50 border-amber-200",
   }[meta.tone];
 
-  const hasIssue = issues && issues.length > 0;
+  const hasIssue = !locked && issues && issues.length > 0;
 
   return (
     <div className={`rounded-xl border p-3 ${hasIssue ? "border-rose-300 bg-rose-50" : toneBg}`}>
@@ -575,15 +688,18 @@ function MealSlot({ day, slot, req, issues, onSwap }) {
         <span>{meta.time}</span>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <button className="flex items-center gap-2 text-right flex-1" onClick={() => setExpanded((v) => !v)}>
           <Icon size={18} className="text-stone-400 shrink-0" />
           <span className="font-semibold text-stone-800 text-sm">{meal.name}</span>
-        </div>
-        <button onClick={() => setPicking(true)}
-          className="text-xs font-semibold text-stone-500 hover:text-orange-600 border border-stone-300 rounded-full px-2.5 py-1 shrink-0">
-          החלפה
         </button>
+        {!locked && (
+          <button onClick={() => setPicking(true)}
+            className="text-xs font-semibold text-stone-500 hover:text-orange-600 border border-stone-300 rounded-full px-2.5 py-1 shrink-0">
+            החלפה
+          </button>
+        )}
       </div>
+      {expanded && <ComponentList components={meal.components} />}
       <div className="flex flex-wrap gap-1.5 mt-2">
         <Pill>{meal.kcal} קק"ל</Pill>
         <Pill>נתרן {meal.sodium} מ"ג</Pill>
@@ -610,7 +726,7 @@ function MealSlot({ day, slot, req, issues, onSwap }) {
           })}
         </div>
       )}
-      {picking && (
+      {picking && !locked && (
         <MealPicker slot={slot} req={req}
           onPick={(id) => { onSwap(slot, id); setPicking(false); }}
           onClose={() => setPicking(false)} />
@@ -619,11 +735,42 @@ function MealSlot({ day, slot, req, issues, onSwap }) {
   );
 }
 
-function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirm }) {
+function EmailConfirmModal({ onConfirm, onClose }) {
+  const [email, setEmail] = useState("");
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" dir="rtl">
+      <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-stone-800">אישור התפריט ושליחה למייל</h3>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><X size={20} /></button>
+        </div>
+        <p className="text-xs text-stone-500 leading-relaxed">
+          לאחר האישור <b>לא ניתן יהיה לערוך</b> את התפריט. נשלח אליך קישור שמציג בכל יום את התפריט של אותו יום בלבד.
+        </p>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="כתובת מייל"
+          className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm" dir="ltr" />
+        <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg p-2 leading-relaxed">
+          <Info size={12} className="inline ml-1" />
+          בתצוגה הזו אין שרת מייל אמיתי מחובר — אישור התפריט ינעל אותו ויציג לך תצוגה מקדימה של תוכן המייל שהיה נשלח, במקום משלוח בפועל.
+        </div>
+        <button disabled={!valid} onClick={() => onConfirm(email)}
+          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition">
+          אשרי ונעלי את התפריט
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirmWithEmail, locked, emailPreview }) {
   const wt = weekTotals(week);
   const rmCount = redMeatCount(week);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showEmailContent, setShowEmailContent] = useState(false);
 
   const swapMeal = (dayKey, slot, mealId) => {
+    if (locked) return;
     const days = week.days.map((d) => {
       if (d.key !== dayKey) return d;
       const field = slot === "lunch" ? "lunchId" : slot === "dinner" ? "dinnerId" : "snackId";
@@ -640,13 +787,36 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirm })
             <ClipboardList size={20} />
             <span>התפריט השבועי שלך</span>
           </div>
-          <p className="text-stone-500 text-sm">אפשר לערוך כל ארוחה — לחצי "החלפה"</p>
+          <p className="text-stone-500 text-sm">{locked ? "התפריט אושר ונעול לעריכה" : 'אפשר לערוך כל ארוחה — לחצי "החלפה"'}</p>
         </div>
-        <button onClick={onRegenerate}
-          className="text-sm font-semibold text-stone-600 hover:text-orange-600 flex items-center gap-1.5 border border-stone-300 rounded-full px-3 py-1.5">
-          <RefreshCw size={14} /> תפריט חדש
-        </button>
+        {!locked && (
+          <button onClick={onRegenerate}
+            className="text-sm font-semibold text-stone-600 hover:text-orange-600 flex items-center gap-1.5 border border-stone-300 rounded-full px-3 py-1.5">
+            <RefreshCw size={14} /> תפריט חדש
+          </button>
+        )}
       </div>
+
+      {locked && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            <CheckCircle2 size={18} className="shrink-0" />
+            <span className="flex-1">התפריט אושר ונשלח למייל — לצפייה בתפריט היומי עברי לטאב "מעקב יומי"</span>
+            {emailPreview && (
+              <button onClick={() => setShowEmailContent((v) => !v)} className="font-bold underline shrink-0">
+                {showEmailContent ? "הסתרה" : "תוכן המייל"}
+              </button>
+            )}
+          </div>
+          {showEmailContent && emailPreview && (
+            <div className="bg-white border border-stone-200 rounded-xl p-3 text-xs text-stone-600 space-y-1" dir="ltr">
+              <div><b>To:</b> {emailPreview.to}</div>
+              <div><b>Subject:</b> {emailPreview.subject}</div>
+              <pre className="whitespace-pre-wrap font-sans mt-2" dir="rtl">{emailPreview.body}</pre>
+            </div>
+          )}
+        </div>
+      )}
 
       <SectionCard className="flex flex-wrap gap-2 items-center">
         <span className="text-xs font-bold text-stone-500 ml-1">סה"כ שבועי:</span>
@@ -669,7 +839,7 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirm })
                 <h3 className="font-bold text-stone-800">יום {day.name}</h3>
                 <span className="text-xs text-stone-500">{Math.round(totals.kcal)} קק"ל ליום</span>
               </div>
-              {dayIssues.length > 0 && (
+              {!locked && dayIssues.length > 0 && (
                 <div className="mb-2 space-y-1">
                   {dayIssues.map((msg, i) => (
                     <div key={i} className="flex items-center gap-1.5 text-xs text-rose-700 bg-rose-100 rounded-lg p-2">
@@ -679,11 +849,11 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirm })
                 </div>
               )}
               <div className="grid sm:grid-cols-3 gap-2">
-                <MealSlot day={day} slot="lunch" req={requirements} issues={mealIssues.lunch}
+                <MealSlot day={day} slot="lunch" req={requirements} issues={mealIssues.lunch} locked={locked}
                   onSwap={(slot, id) => swapMeal(day.key, slot, id)} />
-                <MealSlot day={day} slot="dinner" req={requirements} issues={mealIssues.dinner}
+                <MealSlot day={day} slot="dinner" req={requirements} issues={mealIssues.dinner} locked={locked}
                   onSwap={(slot, id) => swapMeal(day.key, slot, id)} />
-                <MealSlot day={day} slot="snack" req={requirements} issues={mealIssues.snack}
+                <MealSlot day={day} slot="snack" req={requirements} issues={mealIssues.snack} locked={locked}
                   onSwap={(slot, id) => swapMeal(day.key, slot, id)} />
               </div>
             </SectionCard>
@@ -691,11 +861,20 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirm })
         })}
       </div>
 
-      <button onClick={onConfirm}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm">
-        <CalendarCheck size={18} />
-        אשרי תפריט וצרי מעקב יומי
-      </button>
+      {!locked && (
+        <button onClick={() => setShowEmailModal(true)}
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm">
+          <CalendarCheck size={18} />
+          שלחי למייל ואשרי תפריט
+        </button>
+      )}
+
+      {showEmailModal && (
+        <EmailConfirmModal
+          onClose={() => setShowEmailModal(false)}
+          onConfirm={(email) => { setShowEmailModal(false); onConfirmWithEmail(email); }}
+        />
+      )}
     </div>
   );
 }
@@ -716,8 +895,12 @@ function StarRow({ value, onChange, max = 5 }) {
   );
 }
 
-function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMenu, onShowReport }) {
-  const [dayIdx, setDayIdx] = useState(0);
+const JS_DAY_TO_KEY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function TrackerView({ week, requirements, tracker, onChangeTracker, onViewLockedMenu, onShowReport }) {
+  const todayKey = JS_DAY_TO_KEY[new Date().getDay()];
+  const todayIdx = week.days.findIndex((d) => d.key === todayKey);
+  const [dayIdx, setDayIdx] = useState(todayIdx >= 0 ? todayIdx : 0);
   const day = week.days[dayIdx];
   const { lunch, dinner, snack } = dayMeals(day);
   const t = tracker[day.key] || { lunchDone: false, dinnerDone: false, snackDone: false, satiety: 0, mood: 0, notes: "" };
@@ -728,6 +911,7 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMen
 
   const totals = dayTotals(day);
   const isWorkout = requirements.workoutDays.includes(day.key);
+  const satDone = !!(tracker.sat && tracker.sat.dinnerDone);
 
   return (
     <div className="max-w-2xl mx-auto space-y-4" dir="rtl">
@@ -739,6 +923,14 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMen
         <p className="text-stone-500 text-sm">כל יום מוצג בנפרד — סמני מה אכלת ואיך הרגשת</p>
       </div>
 
+      {satDone && (
+        <div className="flex items-center gap-2 text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded-xl p-3">
+          <Sparkles size={18} className="shrink-0" />
+          <span className="flex-1">סיימת את השבוע! דוח הסיכום מוכן לצפייה.</span>
+          <button onClick={onShowReport} className="font-bold underline shrink-0">לדוח</button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <button onClick={() => setDayIdx((i) => Math.max(0, i - 1))} disabled={dayIdx === 0}
           className="p-2 rounded-full border border-stone-300 disabled:opacity-30">
@@ -747,10 +939,11 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMen
         <div className="flex gap-1.5 flex-wrap justify-center">
           {week.days.map((d, i) => (
             <button key={d.key} onClick={() => setDayIdx(i)}
-              className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold border relative ${
                 i === dayIdx ? "bg-rose-500 text-white border-rose-500" : "bg-white text-stone-600 border-stone-300"
               }`}>
               {d.name}
+              {d.key === todayKey && <span className="absolute -top-1 -left-1 w-2 h-2 rounded-full bg-teal-500" />}
             </button>
           ))}
         </div>
@@ -783,18 +976,20 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMen
               amber: "bg-amber-50 border-amber-200",
             }[meta.tone];
             return (
-              <button key={slot} onClick={() => update({ [key]: !done })}
-                className={`w-full text-right rounded-xl border p-3 flex items-center gap-3 transition ${toneBg} ${done ? "opacity-70" : ""}`}>
-                <CheckCircle2 size={26} className={done ? "text-emerald-500" : "text-stone-300"} />
-                <Icon size={18} className="text-stone-400 shrink-0" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between text-xs text-stone-500">
-                    <span className="font-semibold">{meta.label}</span>
-                    <span>{meta.time}</span>
+              <div key={slot} className={`w-full text-right rounded-xl border p-3 ${toneBg} ${done ? "opacity-70" : ""}`}>
+                <button onClick={() => update({ [key]: !done })} className="w-full flex items-center gap-3">
+                  <CheckCircle2 size={26} className={done ? "text-emerald-500" : "text-stone-300"} />
+                  <Icon size={18} className="text-stone-400 shrink-0" />
+                  <div className="flex-1 text-right">
+                    <div className="flex items-center justify-between text-xs text-stone-500">
+                      <span className="font-semibold">{meta.label}</span>
+                      <span>{meta.time}</span>
+                    </div>
+                    <div className={`font-semibold text-sm text-stone-800 ${done ? "line-through" : ""}`}>{meal?.name}</div>
                   </div>
-                  <div className={`font-semibold text-sm text-stone-800 ${done ? "line-through" : ""}`}>{meal?.name}</div>
-                </div>
-              </button>
+                </button>
+                {meal && <div className="pr-9"><ComponentList components={meal.components} /></div>}
+              </div>
             );
           })}
         </div>
@@ -831,16 +1026,10 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMen
         </div>
       </SectionCard>
 
-      <div className="flex gap-2">
-        <button onClick={onBackToMenu}
-          className="flex-1 text-stone-500 hover:text-stone-700 text-sm font-semibold flex items-center justify-center gap-1.5 py-2 border border-stone-300 rounded-xl">
-          <Settings2 size={14} /> עריכת התפריט
-        </button>
-        <button onClick={onShowReport}
-          className="flex-1 text-orange-600 hover:text-orange-700 text-sm font-bold flex items-center justify-center gap-1.5 py-2 border border-orange-300 bg-orange-50 rounded-xl">
-          <Sparkles size={14} /> דוח סיכום שבועי
-        </button>
-      </div>
+      <button onClick={onViewLockedMenu}
+        className="w-full text-stone-500 hover:text-stone-700 text-sm font-semibold flex items-center justify-center gap-1.5 py-2 border border-stone-300 rounded-xl">
+        <ClipboardList size={14} /> צפייה בתפריט השבועי המלא (נעול)
+      </button>
     </div>
   );
 }
@@ -848,7 +1037,7 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onBackToMen
 // ---------------------------------------------------------------------------
 // Weekly report view
 // ---------------------------------------------------------------------------
-function ReportView({ week, requirements, tracker, onBackToTracker }) {
+function ReportView({ week, requirements, tracker, onBackToTracker, onStartNextWeek }) {
   const wt = weekTotals(week);
   const rmCount = redMeatCount(week);
 
@@ -952,6 +1141,12 @@ function ReportView({ week, requirements, tracker, onBackToTracker }) {
         </SectionCard>
       )}
 
+      <button onClick={onStartNextWeek}
+        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm">
+        <Sparkles size={18} />
+        יצירת תפריט לשבוע הבא
+      </button>
+
       <button onClick={onBackToTracker}
         className="w-full text-stone-500 hover:text-stone-700 text-sm font-semibold flex items-center justify-center gap-1.5 py-2">
         <ChevronRight size={14} /> חזרה למעקב היומי
@@ -971,6 +1166,8 @@ export default function App() {
   const [requirements, setRequirements] = useState(defaultRequirements);
   const [week, setWeek] = useState(null);
   const [tracker, setTracker] = useState({});
+  const [confirmed, setConfirmed] = useState(false);
+  const [emailPreview, setEmailPreview] = useState(null);
   const saveTimer = useRef(null);
 
   useEffect(() => {
@@ -992,6 +1189,8 @@ export default function App() {
           if (parsed.week) setWeek(parsed.week);
           if (parsed.tracker) setTracker(parsed.tracker);
           if (parsed.stage) setStage(parsed.stage);
+          if (parsed.confirmed) setConfirmed(true);
+          if (parsed.emailPreview) setEmailPreview(parsed.emailPreview);
         }
       } catch (e) {
         // no saved state yet — start fresh
@@ -1008,7 +1207,7 @@ export default function App() {
       try {
         await window.storage.set(
           STORAGE_KEY,
-          JSON.stringify({ requirements, week, tracker, stage }),
+          JSON.stringify({ requirements, week, tracker, stage, confirmed, emailPreview }),
           false
         );
       } catch (e) {
@@ -1016,11 +1215,13 @@ export default function App() {
       }
     }, 300);
     return () => clearTimeout(saveTimer.current);
-  }, [requirements, week, tracker, stage, loading]);
+  }, [requirements, week, tracker, stage, confirmed, emailPreview, loading]);
 
   const handleGenerate = (req) => {
     setRequirements(req);
     setWeek(generateWeek(req));
+    setConfirmed(false);
+    setEmailPreview(null);
     setStage("menu");
   };
 
@@ -1028,8 +1229,28 @@ export default function App() {
     setWeek(generateWeek(requirements));
   };
 
-  const handleConfirm = () => {
+  const handleConfirmWithEmail = (email) => {
+    const body = week.days.map((d) => {
+      const { lunch, dinner, snack } = dayMeals(d);
+      return `יום ${d.name}:\n  צהריים: ${lunch?.name || "-"}\n  ערב: ${dinner?.name || "-"}\n  חטיף: ${snack?.name || "-"}`;
+    }).join("\n\n");
+    setEmailPreview({
+      to: email,
+      subject: "התפריט השבועי שלך מוכן 🎉",
+      body: `היי!\n\nהתפריט לשבוע הקרוב אושר ונעול. בכל יום, פתיחת הקישור תציג רק את התפריט של אותו יום.\n\n${body}\n\nבהצלחה השבוע!`,
+    });
+    setConfirmed(true);
     setStage("tracker");
+  };
+
+  const weekComplete = !!(tracker.sat && tracker.sat.dinnerDone);
+
+  const handleStartNextWeek = () => {
+    setWeek(null);
+    setTracker({});
+    setConfirmed(false);
+    setEmailPreview(null);
+    setStage("setup");
   };
 
   if (loading) {
@@ -1044,22 +1265,21 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-stone-50 to-emerald-50 py-8 px-4">
       <div className="max-w-3xl mx-auto mb-6 flex items-center justify-center gap-2 flex-wrap" dir="rtl">
         {[
-          { key: "setup", label: "דרישות", icon: Settings2 },
-          { key: "menu", label: "תפריט", icon: ClipboardList },
-          { key: "tracker", label: "מעקב יומי", icon: CalendarCheck },
-          { key: "report", label: "דוח שבועי", icon: Sparkles },
+          { key: "setup", label: "דרישות", icon: Settings2, reachable: true },
+          { key: "menu", label: "תפריט", icon: ClipboardList, reachable: !!week },
+          { key: "tracker", label: "מעקב יומי", icon: CalendarCheck, reachable: !!week && confirmed },
+          { key: "report", label: "דוח שבועי", icon: Sparkles, reachable: weekComplete },
         ].map((s, i) => {
           const Icon = s.icon;
           const active = stage === s.key;
-          const reachable = s.key === "setup" || week;
           return (
             <React.Fragment key={s.key}>
               {i > 0 && <div className="w-6 h-px bg-stone-300" />}
               <button
-                disabled={!reachable}
-                onClick={() => reachable && setStage(s.key)}
+                disabled={!s.reachable}
+                onClick={() => s.reachable && setStage(s.key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition ${
-                  active ? "bg-stone-800 text-white" : reachable ? "bg-white text-stone-500 border border-stone-300" : "bg-stone-100 text-stone-300"
+                  active ? "bg-stone-800 text-white" : s.reachable ? "bg-white text-stone-500 border border-stone-300" : "bg-stone-100 text-stone-300"
                 }`}>
                 <Icon size={13} /> {s.label}
               </button>
@@ -1076,27 +1296,30 @@ export default function App() {
           requirements={requirements}
           onChangeWeek={setWeek}
           onRegenerate={handleRegenerate}
-          onConfirm={handleConfirm}
+          onConfirmWithEmail={handleConfirmWithEmail}
+          locked={confirmed}
+          emailPreview={emailPreview}
         />
       )}
 
-      {stage === "tracker" && week && (
+      {stage === "tracker" && week && confirmed && (
         <TrackerView
           week={week}
           requirements={requirements}
           tracker={tracker}
           onChangeTracker={setTracker}
-          onBackToMenu={() => setStage("menu")}
-          onShowReport={() => setStage("report")}
+          onViewLockedMenu={() => setStage("menu")}
+          onShowReport={() => weekComplete && setStage("report")}
         />
       )}
 
-      {stage === "report" && week && (
+      {stage === "report" && week && weekComplete && (
         <ReportView
           week={week}
           requirements={requirements}
           tracker={tracker}
           onBackToTracker={() => setStage("tracker")}
+          onStartNextWeek={handleStartNextWeek}
         />
       )}
     </div>
