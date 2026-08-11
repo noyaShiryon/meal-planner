@@ -236,6 +236,22 @@ function shuffled(arr) {
   return a;
 }
 
+// On workout days: a bit more fuel overall, and specifically more carb
+// headroom (targeted low-carb) since intense training burns through
+// glycogen faster than low-intensity activity.
+const WORKOUT_BONUS = { kcal: 150, carbs: 20 };
+
+function effectiveReqForDay(req, dayKey) {
+  const isWorkout = req.workoutDays.includes(dayKey);
+  if (!isWorkout) return req;
+  return {
+    ...req,
+    calMin: req.calMin + WORKOUT_BONUS.kcal,
+    calMax: req.calMax + WORKOUT_BONUS.kcal,
+    carbMax: req.carbMax >= 999 ? req.carbMax : req.carbMax + WORKOUT_BONUS.carbs,
+  };
+}
+
 const STYLE_LIMITS = {
   mediterranean: { mainCarbMax: Infinity, snackCarbMax: Infinity },
   keto: { mainCarbMax: 16, snackCarbMax: 15 },
@@ -265,9 +281,11 @@ function generateWeek(req) {
   const mainOptions = poolFor(MAIN_POOL, req, false);
   const snackOptions = poolFor(SNACK_POOL, req, true);
   const usageCount = {};
-  const mid = (req.calMin + req.calMax) / 2;
 
   const days = DAY_DEFS.map((d) => {
+    const dayReq = effectiveReqForDay(req, d.key);
+    const mid = (dayReq.calMin + dayReq.calMax) / 2;
+    const isWorkout = req.workoutDays.includes(d.key);
     let best = null;
     for (let attempt = 0; attempt < 40; attempt++) {
       const lunch = shuffled(mainOptions)[0];
@@ -276,7 +294,10 @@ function generateWeek(req) {
       if (!lunch || !dinner || !snack) continue;
       const total = lunch.kcal + dinner.kcal + snack.kcal;
       const usagePenalty = (usageCount[lunch.id] || 0) + (usageCount[dinner.id] || 0);
-      const score = Math.abs(total - mid) + usagePenalty * 120;
+      // Pre-workout snack should be quick energy: light on fat, moderate
+      // carbs — steers away from heavy/fatty snacks on training days.
+      const workoutPenalty = isWorkout ? snack.fat * 4 + Math.abs(snack.carbs - 20) * 1.5 : 0;
+      const score = Math.abs(total - mid) + usagePenalty * 120 + workoutPenalty;
       if (!best || score < best.score) {
         best = { lunchId: lunch.id, dinnerId: dinner.id, snackId: snack.id, score };
       }
@@ -345,7 +366,9 @@ function redMeatCount(week) {
 }
 
 // Returns { mealIssues: {slotKey: [msgs]}, dayIssues: [msgs] } for one day
-function validateDay(day, req) {
+function validateDay(day, reqRaw) {
+  const req = effectiveReqForDay(reqRaw, day.key);
+  const isWorkout = reqRaw.workoutDays.includes(day.key);
   const { lunch, dinner, snack } = dayMeals(day);
   const mealIssues = { lunch: [], dinner: [], snack: [] };
   const dayIssues = [];
@@ -360,15 +383,16 @@ function validateDay(day, req) {
   });
 
   const totals = dayTotals(day);
+  const workoutNote = isWorkout ? " (כולל תוספת ליום אימון)" : "";
   if (totals.kcal < req.calMin || totals.kcal > req.calMax) {
-    dayIssues.push(`סה"כ קלוריות היום (${Math.round(totals.kcal)}) מחוץ לטווח שהגדרת (${req.calMin}–${req.calMax})`);
+    dayIssues.push(`סה"כ קלוריות היום (${Math.round(totals.kcal)}) מחוץ לטווח שהגדרת (${req.calMin}–${req.calMax})${workoutNote}`);
   }
   if (req.carbMax && totals.carbs > req.carbMax) {
     const worst = ["lunch", "dinner", "snack"].reduce((a, b) => {
       const ma = dayMeals(day)[a], mb = dayMeals(day)[b];
       return (ma?.carbs || 0) >= (mb?.carbs || 0) ? a : b;
     });
-    mealIssues[worst].push(`התורם הגדול ביותר לחריגת פחמימות (סה"כ ${Math.round(totals.carbs)} ג', יעד עד ${req.carbMax})`);
+    mealIssues[worst].push(`התורם הגדול ביותר לחריגת פחמימות (סה"כ ${Math.round(totals.carbs)} ג', יעד עד ${req.carbMax}${workoutNote})`);
   }
   if (totals.sodium > req.sodiumMax) {
     const worst = ["lunch", "dinner", "snack"].reduce((a, b) => {
@@ -836,7 +860,12 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirmWit
           return (
             <SectionCard key={day.key}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-stone-800">יום {day.name}</h3>
+                <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                  יום {day.name}
+                  {requirements.workoutDays.includes(day.key) && (
+                    <Pill tone="teal"><Dumbbell size={12} /> יום אימון</Pill>
+                  )}
+                </h3>
                 <span className="text-xs text-stone-500">{Math.round(totals.kcal)} קק"ל ליום</span>
               </div>
               {!locked && dayIssues.length > 0 && (
@@ -961,6 +990,16 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onViewLocke
             {isWorkout && <Pill tone="teal"><Dumbbell size={12} /> יום אימון</Pill>}
           </div>
         </div>
+
+        {isWorkout && (
+          <div className="flex items-start gap-1.5 text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-lg p-2.5 mb-3">
+            <Droplet size={14} className="mt-0.5 shrink-0" />
+            <span>
+              יום אימון: יעד הקלוריות והפחמימות הועלה מעט ({`+${WORKOUT_BONUS.kcal} קק"ל, +${WORKOUT_BONUS.carbs} ג' פחמימה`}), והחטיף נבחר קליל בכוונה (מעט שומן) לפני האימון.
+              הקפידי על מים ואלקטרוליטים אחרי האימון.
+            </span>
+          </div>
+        )}
 
         <div className="space-y-2">
           {[
