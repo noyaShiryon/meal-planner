@@ -208,12 +208,12 @@ function defaultReqForGoals(goalKeys) {
 
 const defaultRequirements = {
   mode: "simple",
-  goals: ["bp", "chol"],
+  goals: [],
   style: "mediterranean",
   eatStart: "12:00",
   eatEnd: "20:00",
-  workoutDays: ["mon", "wed", "fri"],
-  ...combineGoals(["bp", "chol"]),
+  workoutDays: [],
+  ...combineGoals([]),
   avoidFish: false,
   avoidBeef: false,
   avoidTurkey: false,
