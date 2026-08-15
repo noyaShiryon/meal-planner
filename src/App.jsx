@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Droplet, Dumbbell, CheckCircle2, AlertTriangle, RefreshCw, Sparkles,
   ChevronLeft, ChevronRight, Sun, Moon, Star, X, Smile, Meh, Frown,
-  Save, Settings2, ClipboardList, CalendarCheck, Loader2, Info
+  Save, Settings2, ClipboardList, CalendarCheck, Loader2, Info, Camera, Pencil
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -151,6 +151,36 @@ const DAY_DEFS = [
 
 const byId = (pool, id) => pool.find((m) => m.id === id);
 
+// Portion scaling: instead of only swapping between fixed-size dishes, each
+// assigned meal carries a scale factor (0.5x-2x) applied uniformly to every
+// component's grams and to the dish's macros. This lets the generator (and
+// the person) hit a calorie target precisely rather than being limited to
+// whatever fixed-size dishes happen to exist in the pool.
+const SCALE_MIN = 0.5;
+const SCALE_MAX = 2;
+const GEN_SCALE_MIN = 0.6;
+const GEN_SCALE_MAX = 2;
+
+function clampScale(s, lo = SCALE_MIN, hi = SCALE_MAX) {
+  return Math.max(lo, Math.min(hi, Math.round(s * 20) / 20)); // snap to 5%
+}
+
+function scaleMeal(dish, scale) {
+  if (!dish) return undefined;
+  const s = scale || 1;
+  return {
+    ...dish,
+    scale: s,
+    components: dish.components.map((c) => ({ label: c.label, grams: Math.max(5, Math.round((c.grams * s) / 5) * 5) })),
+    kcal: Math.round(dish.kcal * s),
+    protein: Math.round(dish.protein * s * 10) / 10,
+    fat: Math.round(dish.fat * s * 10) / 10,
+    satFat: Math.round(dish.satFat * s * 10) / 10,
+    carbs: Math.round(dish.carbs * s * 10) / 10,
+    sodium: Math.round(dish.sodium * s),
+  };
+}
+
 const TIME_OPTIONS = Array.from({ length: 48 }).map((_, i) => {
   const h = String(Math.floor(i / 2)).padStart(2, "0");
   const m = i % 2 === 0 ? "00" : "30";
@@ -187,16 +217,63 @@ const STYLE_OPTIONS = [
 
 // Combine the constraints of every selected goal into one requirement set,
 // starting from a neutral baseline and tightening as goals are added.
-function combineGoals(goalKeys) {
-  const base = { calMin: 1400, calMax: 1700, sodiumMax: 2300, satFatMax: 20, carbMax: 999 };
+// Activity multiplier derived from the number of workout days selected
+// (Mifflin-St Jeor style activity factors).
+const ACTIVITY_LEVELS = [
+  { max: 0, mult: 1.2, label: "ללא אימונים" },
+  { max: 2, mult: 1.375, label: "פעילות קלה" },
+  { max: 4, mult: 1.55, label: "פעילות בינונית" },
+  { max: 6, mult: 1.725, label: "פעילות גבוהה" },
+  { max: 7, mult: 1.9, label: "פעילות גבוהה מאוד" },
+];
+
+function activityForWorkoutCount(n) {
+  return ACTIVITY_LEVELS.find((a) => n <= a.max) || ACTIVITY_LEVELS[ACTIVITY_LEVELS.length - 1];
+}
+
+// Mifflin-St Jeor BMR -> TDEE -> a calorie range centered on TDEE. Returns
+// null when the personal fields aren't filled in, so the app can fall back
+// to a neutral default instead of guessing.
+function personalCalorieBase(req) {
+  const { age, weightKg, heightCm, gender, workoutDays } = req;
+  if (!age || !weightKg || !heightCm || !gender) return null;
+  const bmr = gender === "male"
+    ? 10 * weightKg + 6.25 * heightCm - 5 * age + 5
+    : 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+  const activity = activityForWorkoutCount((workoutDays || []).length);
+  const tdee = bmr * activity.mult;
+  return {
+    calMin: Math.round((tdee - 150) / 50) * 50,
+    calMax: Math.round((tdee + 150) / 50) * 50,
+    tdee: Math.round(tdee),
+    bmr: Math.round(bmr),
+    activityLabel: activity.label,
+  };
+}
+
+function combineGoals(goalKeys, personalBase) {
+  const base = personalBase
+    ? { calMin: personalBase.calMin, calMax: personalBase.calMax, sodiumMax: 2300, satFatMax: 20, carbMax: 999 }
+    : { calMin: 1400, calMax: 1700, sodiumMax: 2300, satFatMax: 20, carbMax: 999 };
+  let calMinSet = false, calMaxSet = false;
   goalKeys.forEach((key) => {
     const g = GOALS.find((g) => g.key === key);
     if (!g) return;
     if (g.sodiumMax !== undefined) base.sodiumMax = Math.min(base.sodiumMax, g.sodiumMax);
     if (g.satFatMax !== undefined) base.satFatMax = Math.min(base.satFatMax, g.satFatMax);
     if (g.carbMax !== undefined) base.carbMax = Math.min(base.carbMax, g.carbMax);
-    if (g.calMin !== undefined) base.calMin = Math.max(base.calMin, g.calMin);
-    if (g.calMax !== undefined) base.calMax = Math.min(base.calMax, g.calMax);
+    // The first goal that sets a calorie bound replaces the neutral default
+    // outright; only a second calorie-setting goal actually intersects —
+    // otherwise a single goal like "gain" (1800-2200) would get wrongly
+    // squeezed against the unrelated 1400-1700 baseline.
+    if (g.calMin !== undefined) {
+      base.calMin = calMinSet ? Math.max(base.calMin, g.calMin) : g.calMin;
+      calMinSet = true;
+    }
+    if (g.calMax !== undefined) {
+      base.calMax = calMaxSet ? Math.min(base.calMax, g.calMax) : g.calMax;
+      calMaxSet = true;
+    }
   });
   if (base.calMin > base.calMax) base.calMin = base.calMax;
   return base;
@@ -210,6 +287,10 @@ const defaultRequirements = {
   mode: "simple",
   goals: [],
   style: "mediterranean",
+  age: null,
+  weightKg: null,
+  heightCm: null,
+  gender: null,
   eatStart: "12:00",
   eatEnd: "20:00",
   workoutDays: [],
@@ -292,14 +373,24 @@ function generateWeek(req) {
       const dinner = shuffled(mainOptions.filter((m) => m.id !== lunch.id))[0] || lunch;
       const snack = shuffled(snackOptions)[0];
       if (!lunch || !dinner || !snack) continue;
-      const total = lunch.kcal + dinner.kcal + snack.kcal;
+
+      // Solve for the portion scale (applied to both mains) that lands the
+      // day closest to the target — this is what actually gets us inside
+      // the calorie range, rather than hoping a random fixed-size combo
+      // happens to fit.
+      const mainsBase = lunch.kcal + dinner.kcal;
+      const mainsTarget = mid - snack.kcal;
+      const rawScale = mainsBase > 0 ? mainsTarget / mainsBase : 1;
+      const mainScale = clampScale(rawScale, GEN_SCALE_MIN, GEN_SCALE_MAX);
+      const total = mainsBase * mainScale + snack.kcal;
+
       const usagePenalty = (usageCount[lunch.id] || 0) + (usageCount[dinner.id] || 0);
       // Pre-workout snack should be quick energy: light on fat, moderate
       // carbs — steers away from heavy/fatty snacks on training days.
       const workoutPenalty = isWorkout ? snack.fat * 4 + Math.abs(snack.carbs - 20) * 1.5 : 0;
       const score = Math.abs(total - mid) + usagePenalty * 120 + workoutPenalty;
       if (!best || score < best.score) {
-        best = { lunchId: lunch.id, dinnerId: dinner.id, snackId: snack.id, score };
+        best = { lunchId: lunch.id, dinnerId: dinner.id, snackId: snack.id, mainScale, score };
       }
     }
     if (best) {
@@ -312,6 +403,9 @@ function generateWeek(req) {
       lunchId: best ? best.lunchId : mainOptions[0]?.id,
       dinnerId: best ? best.dinnerId : mainOptions[0]?.id,
       snackId: best ? best.snackId : snackOptions[0]?.id,
+      lunchScale: best ? best.mainScale : 1,
+      dinnerScale: best ? best.mainScale : 1,
+      snackScale: 1,
     };
   });
   return { days };
@@ -319,9 +413,9 @@ function generateWeek(req) {
 
 function dayMeals(day) {
   return {
-    lunch: byId(MAIN_POOL, day.lunchId),
-    dinner: byId(MAIN_POOL, day.dinnerId),
-    snack: byId(SNACK_POOL, day.snackId),
+    lunch: scaleMeal(byId(MAIN_POOL, day.lunchId), day.lunchScale),
+    dinner: scaleMeal(byId(MAIN_POOL, day.dinnerId), day.dinnerScale),
+    snack: scaleMeal(byId(SNACK_POOL, day.snackId), day.snackScale),
   };
 }
 
@@ -466,6 +560,7 @@ const CAL_OPTIONS = range(800, 3000, 50);
 const SODIUM_OPTIONS = range(500, 4000, 100);
 const SATFAT_OPTIONS = range(5, 40, 1);
 const CARB_OPTIONS = [...range(20, 350, 10), 999];
+const AGE_OPTIONS = range(15, 90, 5);
 
 function TimeSelect({ value, onChange }) {
   return (
@@ -481,8 +576,13 @@ function TimeSelect({ value, onChange }) {
 function SetupView({ requirements, onGenerate }) {
   const [req, setReq] = useState({ ...defaultRequirements, ...requirements, goals: Array.isArray(requirements?.goals) ? requirements.goals : defaultRequirements.goals });
 
+  // Recomputes calMin/calMax/etc. from current goals + personal stats
+  // (when filled in) — called after any change that should affect the
+  // calorie target: goals, workout days, age, weight, height, gender.
+  const recompute = (r) => ({ ...r, ...combineGoals(r.goals, personalCalorieBase(r)) });
+
   const toggleWorkoutDay = (key) => {
-    setReq((r) => ({
+    setReq((r) => recompute({
       ...r,
       workoutDays: r.workoutDays.includes(key)
         ? r.workoutDays.filter((k) => k !== key)
@@ -493,11 +593,16 @@ function SetupView({ requirements, onGenerate }) {
   const toggleGoal = (goalKey) => {
     setReq((r) => {
       const goals = r.goals.includes(goalKey) ? r.goals.filter((k) => k !== goalKey) : [...r.goals, goalKey];
-      return { ...r, goals, ...combineGoals(goals) };
+      return recompute({ ...r, goals });
     });
   };
 
+  const setPersonal = (field, value) => {
+    setReq((r) => recompute({ ...r, [field]: value }));
+  };
+
   const toggleAvoid = (key) => setReq((r) => ({ ...r, [key]: !r[key] }));
+  const personalBase = personalCalorieBase(req);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5" dir="rtl">
@@ -521,6 +626,54 @@ function SetupView({ requirements, onGenerate }) {
           ))}
         </div>
       </div>
+
+      <SectionCard className="space-y-4">
+        <div>
+          <label className="block text-sm font-bold text-stone-700 mb-2">נתונים אישיים (לחישוב יעד קלוריות מדויק)</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-stone-500 mb-1">גיל</label>
+              <select value={req.age || ""} onChange={(e) => setPersonal("age", e.target.value ? Number(e.target.value) : null)}
+                className="border border-stone-300 rounded-lg px-3 py-2 text-sm w-full bg-white">
+                <option value="">בחרי</option>
+                {AGE_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-500 mb-1">מגדר</label>
+              <select value={req.gender || ""} onChange={(e) => setPersonal("gender", e.target.value || null)}
+                className="border border-stone-300 rounded-lg px-3 py-2 text-sm w-full bg-white">
+                <option value="">בחרי</option>
+                <option value="female">אישה</option>
+                <option value="male">גבר</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-500 mb-1">משקל (ק"ג)</label>
+              <input type="number" step="0.1" min="30" max="250" value={req.weightKg || ""}
+                onChange={(e) => setPersonal("weightKg", e.target.value ? Math.round(Number(e.target.value) * 10) / 10 : null)}
+                placeholder="לדוגמה 62.5"
+                className="border border-stone-300 rounded-lg px-3 py-2 text-sm w-full bg-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-500 mb-1">גובה (ס"מ)</label>
+              <input type="number" step="1" min="120" max="220" value={req.heightCm || ""}
+                onChange={(e) => setPersonal("heightCm", e.target.value ? Number(e.target.value) : null)}
+                placeholder="לדוגמה 165"
+                className="border border-stone-300 rounded-lg px-3 py-2 text-sm w-full bg-white" />
+            </div>
+          </div>
+          {personalBase ? (
+            <div className="mt-3 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+              רמת פעילות ({personalBase.activityLabel}, לפי {req.workoutDays.length} ימי אימון שתבחרי למטה) → יעד קלורי מחושב: <b>{personalBase.calMin}–{personalBase.calMax}</b> קק"ל ליום
+            </div>
+          ) : (
+            <div className="mt-3 text-xs text-stone-500 bg-stone-50 border border-stone-200 rounded-lg p-2.5">
+              מלאי את כל הנתונים כדי לקבל יעד קלורי מחושב אישית (במקום ברירת מחדל כללית)
+            </div>
+          )}
+        </div>
+      </SectionCard>
 
       <SectionCard className="space-y-4">
         <div>
@@ -689,12 +842,11 @@ const SLOT_META = {
   snack: { label: "חטיף", time: "16:30", icon: Star, tone: "amber" },
 };
 
-function MealSlot({ day, slot, req, issues, onSwap, locked }) {
+function MealSlot({ day, slot, req, issues, onSwap, onScaleChange, locked }) {
   const meal = dayMeals(day)[slot];
   const meta = SLOT_META[slot];
   const Icon = meta.icon;
   const [picking, setPicking] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   if (!meal) return null;
 
   const toneBg = {
@@ -712,10 +864,10 @@ function MealSlot({ day, slot, req, issues, onSwap, locked }) {
         <span>{meta.time}</span>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <button className="flex items-center gap-2 text-right flex-1" onClick={() => setExpanded((v) => !v)}>
+        <div className="flex items-center gap-2 text-right flex-1">
           <Icon size={18} className="text-stone-400 shrink-0" />
           <span className="font-semibold text-stone-800 text-sm">{meal.name}</span>
-        </button>
+        </div>
         {!locked && (
           <button onClick={() => setPicking(true)}
             className="text-xs font-semibold text-stone-500 hover:text-orange-600 border border-stone-300 rounded-full px-2.5 py-1 shrink-0">
@@ -723,7 +875,16 @@ function MealSlot({ day, slot, req, issues, onSwap, locked }) {
           </button>
         )}
       </div>
-      {expanded && <ComponentList components={meal.components} />}
+      <ComponentList components={meal.components} />
+      {!locked && onScaleChange && (
+        <div className="flex items-center justify-center gap-2 mt-2 bg-white/70 rounded-lg py-1">
+          <button onClick={() => onScaleChange(slot, -0.1)}
+            className="w-6 h-6 rounded-full border border-stone-300 text-stone-600 font-bold text-sm leading-none">−</button>
+          <span className="text-xs font-bold text-stone-600 w-12 text-center">גודל מנה {Math.round((meal.scale || 1) * 100)}%</span>
+          <button onClick={() => onScaleChange(slot, 0.1)}
+            className="w-6 h-6 rounded-full border border-stone-300 text-stone-600 font-bold text-sm leading-none">+</button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5 mt-2">
         <Pill>{meal.kcal} קק"ל</Pill>
         <Pill>נתרן {meal.sodium} מ"ג</Pill>
@@ -797,8 +958,20 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirmWit
     if (locked) return;
     const days = week.days.map((d) => {
       if (d.key !== dayKey) return d;
-      const field = slot === "lunch" ? "lunchId" : slot === "dinner" ? "dinnerId" : "snackId";
-      return { ...d, [field]: mealId };
+      const idField = slot === "lunch" ? "lunchId" : slot === "dinner" ? "dinnerId" : "snackId";
+      const scaleField = slot === "lunch" ? "lunchScale" : slot === "dinner" ? "dinnerScale" : "snackScale";
+      return { ...d, [idField]: mealId, [scaleField]: 1 };
+    });
+    onChangeWeek({ days });
+  };
+
+  const changeScale = (dayKey, slot, delta) => {
+    if (locked) return;
+    const days = week.days.map((d) => {
+      if (d.key !== dayKey) return d;
+      const field = slot === "lunch" ? "lunchScale" : slot === "dinner" ? "dinnerScale" : "snackScale";
+      const current = d[field] || 1;
+      return { ...d, [field]: clampScale(current + delta) };
     });
     onChangeWeek({ days });
   };
@@ -879,11 +1052,11 @@ function MenuView({ week, requirements, onChangeWeek, onRegenerate, onConfirmWit
               )}
               <div className="grid sm:grid-cols-3 gap-2">
                 <MealSlot day={day} slot="lunch" req={requirements} issues={mealIssues.lunch} locked={locked}
-                  onSwap={(slot, id) => swapMeal(day.key, slot, id)} />
+                  onSwap={(slot, id) => swapMeal(day.key, slot, id)} onScaleChange={(slot, delta) => changeScale(day.key, slot, delta)} />
                 <MealSlot day={day} slot="dinner" req={requirements} issues={mealIssues.dinner} locked={locked}
-                  onSwap={(slot, id) => swapMeal(day.key, slot, id)} />
+                  onSwap={(slot, id) => swapMeal(day.key, slot, id)} onScaleChange={(slot, delta) => changeScale(day.key, slot, delta)} />
                 <MealSlot day={day} slot="snack" req={requirements} issues={mealIssues.snack} locked={locked}
-                  onSwap={(slot, id) => swapMeal(day.key, slot, id)} />
+                  onSwap={(slot, id) => swapMeal(day.key, slot, id)} onScaleChange={(slot, delta) => changeScale(day.key, slot, delta)} />
               </div>
             </SectionCard>
           );
@@ -926,10 +1099,155 @@ function StarRow({ value, onChange, max = 5 }) {
 
 const JS_DAY_TO_KEY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
+// ---------------------------------------------------------------------------
+// Plate photo capture + AI comparison against the planned meal
+// ---------------------------------------------------------------------------
+function fileToCompressedBase64(file, maxDim = 500, quality = 0.55) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl); // keep the data: prefix for <img src>, strip it only when calling the API
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function analyzePlatePhoto(dataUrl, plannedMeal) {
+  const base64 = dataUrl.split(",")[1];
+  const plannedDesc = plannedMeal.components.map((c) => `${c.label} - ${c.grams} גרם`).join(", ");
+  const system = `את/ה עוזר/ת תזונה שמשווה תמונה של צלחת אוכל לארוחה מתוכננת.
+נתחי את התמונה וזהי את פריטי המזון והמשקל המשוער שלהם, ואז השווי לארוחה המתוכננת הבאה: "${plannedMeal.name}" (${plannedDesc}; סה"כ ${plannedMeal.kcal} קק"ל, ${plannedMeal.carbs} גרם פחמימות, ${plannedMeal.protein} גרם חלבון, ${plannedMeal.fat} גרם שומן).
+חשבי אחוז התאמה אחד (0-100) שמשקלל גם דמיון במרכיבים עצמם וגם קרבה בערכים התזונתיים בין מה שרואים בתמונה לבין המתוכנן.
+השיבי אך ורק ב-JSON גולמי, ללא markdown ובלי טקסט נוסף, בדיוק לפי המבנה:
+{"matchPercent": number, "items": [{"name": "string (עברית)", "grams": number}], "estKcal": number, "note": "string קצר בעברית שמסביר את ההבדל העיקרי אם יש, אחרת מחרוזת ריקה"}`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      system,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
+            { type: "text", text: "זו התמונה של הצלחת בפועל. נתחי והשווי כמבוקש." },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!response.ok) throw new Error(`API error ${response.status}`);
+  const data = await response.json();
+  const textBlock = (data.content || []).find((b) => b.type === "text");
+  if (!textBlock) throw new Error("no text in response");
+  const clean = textBlock.text.replace(/```json/g, "").replace(/```/g, "").trim();
+  return JSON.parse(clean);
+}
+
+function matchTone(pct) {
+  if (pct >= 85) return "emerald";
+  if (pct >= 60) return "amber";
+  return "rose";
+}
+
+function MealPhotoBlock({ slot, plannedMeal, photoState, onSaved, onFixActual, locked }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const dataUrl = await fileToCompressedBase64(file);
+      const result = await analyzePlatePhoto(dataUrl, plannedMeal);
+      onSaved({
+        photo: dataUrl,
+        matchPercent: Math.round(result.matchPercent),
+        items: result.items || [],
+        note: result.note || "",
+      });
+    } catch (err) {
+      setError("הניתוח נכשל - נסי שוב");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 pr-9">
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+      {!photoState && !busy && !locked && (
+        <button onClick={() => inputRef.current && inputRef.current.click()}
+          className="flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-orange-600 border border-dashed border-stone-300 rounded-lg px-2.5 py-1.5">
+          <Camera size={14} /> צלמי את הצלחת (לא חובה)
+        </button>
+      )}
+      {busy && (
+        <div className="flex items-center gap-1.5 text-xs text-stone-500">
+          <Loader2 size={14} className="animate-spin" /> מנתחת את התמונה...
+        </div>
+      )}
+      {error && <div className="text-xs text-rose-600">{error}</div>}
+      {photoState && !busy && (
+        <div className="flex items-start gap-2 bg-white border border-stone-200 rounded-lg p-2">
+          <img src={photoState.photo} alt="" className="w-14 h-14 object-cover rounded-md shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <Pill tone={matchTone(photoState.matchPercent)}>{photoState.matchPercent}% התאמה</Pill>
+              {!locked && (
+                <button onClick={() => inputRef.current && inputRef.current.click()} className="text-xs text-stone-400 hover:text-orange-600">
+                  <Camera size={13} />
+                </button>
+              )}
+            </div>
+            {photoState.items.length > 0 && (
+              <div className="text-xs text-stone-500 mt-1 truncate">{photoState.items.map((i) => i.name).join(", ")}</div>
+            )}
+            {photoState.note && <div className="text-xs text-stone-500 mt-0.5">{photoState.note}</div>}
+            {photoState.matchPercent < 70 && !locked && (
+              <button onClick={onFixActual}
+                className="mt-1.5 flex items-center gap-1 text-xs font-bold text-orange-600 underline">
+                <Pencil size={12} /> עדכני מה בפועל אכלת
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TrackerView({ week, requirements, tracker, onChangeTracker, onViewLockedMenu, onShowReport }) {
   const todayKey = JS_DAY_TO_KEY[new Date().getDay()];
   const todayIdx = week.days.findIndex((d) => d.key === todayKey);
   const [dayIdx, setDayIdx] = useState(todayIdx >= 0 ? todayIdx : 0);
+  const [fixingSlot, setFixingSlot] = useState(null);
   const day = week.days[dayIdx];
   const { lunch, dinner, snack } = dayMeals(day);
   const t = tracker[day.key] || { lunchDone: false, dinnerDone: false, snackDone: false, satiety: 0, mood: 0, notes: "" };
@@ -1028,6 +1346,26 @@ function TrackerView({ week, requirements, tracker, onChangeTracker, onViewLocke
                   </div>
                 </button>
                 {meal && <div className="pr-9"><ComponentList components={meal.components} /></div>}
+                {meal && (
+                  <MealPhotoBlock
+                    slot={slot}
+                    plannedMeal={meal}
+                    photoState={t[`${slot}Photo`]}
+                    onSaved={(data) => update({ [`${slot}Photo`]: data })}
+                    onFixActual={() => setFixingSlot(slot)}
+                    locked={false}
+                  />
+                )}
+                {t[`${slot}ActualId`] && (
+                  <div className="text-xs text-teal-700 font-semibold mt-1 pr-9">
+                    בפועל עדכנת: {byId(slot === "snack" ? SNACK_POOL : MAIN_POOL, t[`${slot}ActualId`])?.name}
+                  </div>
+                )}
+                {fixingSlot === slot && (
+                  <MealPicker slot={slot} req={requirements}
+                    onPick={(id) => { update({ [`${slot}ActualId`]: id }); setFixingSlot(null); }}
+                    onClose={() => setFixingSlot(null)} />
+                )}
               </div>
             );
           })}
@@ -1085,6 +1423,8 @@ function ReportView({ week, requirements, tracker, onBackToTracker, onStartNextW
   let moodSum = 0, moodN = 0;
   let daysInCalRange = 0, daysSodiumOk = 0, daysSatFatOk = 0, daysCarbOk = 0;
   const notedDays = [];
+  const photoEntries = [];
+  let matchSum = 0, matchN = 0;
 
   week.days.forEach((day) => {
     const t = tracker[day.key] || {};
@@ -1093,6 +1433,14 @@ function ReportView({ week, requirements, tracker, onBackToTracker, onStartNextW
     if (t.snackDone) doneCount++;
     if (t.satiety) { satietySum += t.satiety; satietyN++; }
     if (t.mood) { moodSum += t.mood; moodN++; }
+    ["lunch", "dinner", "snack"].forEach((slot) => {
+      const p = t[`${slot}Photo`];
+      if (p) {
+        photoEntries.push({ dayName: day.name, slotLabel: SLOT_META[slot].label, ...p });
+        matchSum += p.matchPercent;
+        matchN++;
+      }
+    });
     const totals = dayTotals(day);
     if (totals.kcal >= requirements.calMin && totals.kcal <= requirements.calMax) daysInCalRange++;
     if (totals.sodium <= requirements.sodiumMax) daysSodiumOk++;
@@ -1105,6 +1453,7 @@ function ReportView({ week, requirements, tracker, onBackToTracker, onStartNextW
   const adherencePct = Math.round((doneCount / totalMeals) * 100);
   const avgSatiety = satietyN ? (satietySum / satietyN).toFixed(1) : "-";
   const avgMood = moodN ? (moodSum / moodN).toFixed(1) : "-";
+  const avgMatch = matchN ? Math.round(matchSum / matchN) : null;
 
   let headline = "כל התחלה היא הישג — השבוע הבא יהיה עוד יותר טוב!";
   if (adherencePct >= 80) headline = "שבוע מדהים! עמדת ביעדים כמעט כל הזמן 🎉";
@@ -1135,6 +1484,13 @@ function ReportView({ week, requirements, tracker, onBackToTracker, onStartNextW
           <div className="text-xs text-stone-500 font-semibold mt-1">ממוצע מצב רוח (מתוך 5)</div>
         </SectionCard>
       </div>
+
+      {avgMatch !== null && (
+        <SectionCard className="text-center">
+          <div className={`text-2xl font-bold text-${matchTone(avgMatch)}-500`}>{avgMatch}%</div>
+          <div className="text-xs text-stone-500 font-semibold mt-1">ממוצע התאמת צילומי צלחת לתפריט ({matchN} צילומים)</div>
+        </SectionCard>
+      )}
 
       <SectionCard className="space-y-2">
         <div className="font-bold text-stone-700 text-sm mb-1">עמידה ביעדים התזונתיים</div>
@@ -1177,6 +1533,21 @@ function ReportView({ week, requirements, tracker, onBackToTracker, onStartNextW
               <span className="text-stone-600">{n.notes}</span>
             </div>
           ))}
+        </SectionCard>
+      )}
+
+      {photoEntries.length > 0 && (
+        <SectionCard className="space-y-2">
+          <div className="font-bold text-stone-700 text-sm mb-1">צילומי הצלחות שלך השבוע</div>
+          <div className="grid grid-cols-3 gap-2">
+            {photoEntries.map((p, i) => (
+              <div key={i} className="text-center">
+                <img src={p.photo} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                <div className="text-[10px] text-stone-500 mt-1">{p.dayName} · {p.slotLabel}</div>
+                <Pill tone={matchTone(p.matchPercent)}>{p.matchPercent}%</Pill>
+              </div>
+            ))}
+          </div>
         </SectionCard>
       )}
 
